@@ -1,0 +1,165 @@
+---
+title: "EDA on San Francisco Salaries"
+author: "Aouidane Imed eddine"
+output:
+  pdf_document: default
+  engine: xelatex
+---
+```{r}
+library(readr)
+library(tidyverse)
+```
+
+
+# About the dataset : 
+- this data contains the names, job title, and compensation for San Francisco city employees on an annual basis from 2011 to 2014.
+```{r,message=FALSE,warning=FALSE}
+salaries <- read_csv("Salaries.csv")
+dim(salaries)
+```
+```{r}
+head(salaries)
+```
+- The dataset contains 13 columns and 148654 rows. The columns are:
+  1. Id
+  2. EmployeeName
+  3. JobTitle
+  4. BasePay
+  5. OvertimePay
+  6. OtherPay
+  7. Benefits
+  8. TotalPay
+  9. TotalPayBenefits
+  10. Year
+  11. Notes
+  12. Agency
+  13. Status
+  
+# Removing unnecessary columns:
+```{r}
+salaries <- salaries %>% 
+  select(-c(Notes, Agency,Id,EmployeeName,Year))
+```
+
+
+# Exploratory Data Analysis:
+
+```{r}
+summary(salaries)
+```
+- We can observe that the minimum salary is negative which is not possible. So we need to clean the data.
+# Data Cleaning:
+```{r}
+salaries <- salaries %>% filter(BasePay > 0,
+                                OvertimePay > 0,
+                                OtherPay > 0,
+                                Benefits > 0,
+                                TotalPay > 0,
+                                TotalPayBenefits >0)
+summary(salaries)
+```
+- Now we have cleaned the data and removed the negative values. We can explore the data further.
+## Full time jobs vs Part time jobs:
+
+```{r}
+# Full time jobs
+summary(subset(salaries,Status == "FT")$TotalPay)
+```
+```{r}
+# Part time jobs
+summary(subset(salaries,Status == "PT")$TotalPay)
+```
+- The average salary for full-time jobs is 107,000 and for part-time jobs is 31,000. This shows that full-time jobs have higher salaries compared to part-time jobs.
+
+## Visualizing the data:
+```{r}
+salaries_ft <- salaries[which(salaries$Status == "FT"),]
+salaries_pt <- salaries[which(salaries$Status == "PT"),]
+cbind(dim(salaries_ft),dim(salaries_pt))
+```
+
+### Full time jobs distribution:
+```{r}
+salaries_ft %>% ggplot(.,aes(x = TotalPay/1000))+
+  geom_histogram(fill = "blue",bins = 100,,color = "white")+
+  labs(title = "Full time jobs distribution",
+       x = "Total Pay in thousands",
+       y = "Frequency")
+```
+- The distribution of full-time jobs is right-skewed. Most of the employees earn between 0 to 200,000.
+
+```{r}
+salaries_ft %>% ggplot(.,aes(y = TotalPay/1000))+
+  geom_boxplot(fill = "blue")+
+  labs(title = "Full time jobs Boxplot",
+       x = "Total Pay in thousands",
+       y = "Frequency")
+```
+### Part time jobs distribution:
+```{r}
+salaries_pt %>% ggplot(.,aes(x = TotalPay/1000))+
+  geom_histogram(fill = "red",bins = 100,color = "white")+
+  labs(title = "Part time jobs distribution",
+       x = "Total Pay in thousands",
+       y = "Frequency")
+```
+- The distribution of part-time jobs is right-skewed. Most of the employees earn between 0 to 100,000.
+
+```{r}
+salaries_pt %>% ggplot(.,aes(y = TotalPay/1000))+
+  geom_boxplot(fill = "red")+
+  labs(title = "Part time jobs Boxplot",
+       x = "Total Pay in thousands",
+       y = "Frequency")
+```
+### Handeling outliers:
+```{r}
+salaries_ft <- salaries_ft %>% filter(TotalPay < mean(TotalPay) + 3*sd(TotalPay),
+                                      TotalPay > mean(TotalPay) - 3*sd(TotalPay))
+
+salaries_pt <- salaries_pt %>% filter(TotalPay < mean(TotalPay) + 3*sd(TotalPay),
+                                      TotalPay > mean(TotalPay) - 3*sd(TotalPay))
+```
+
+
+### Comparing full-time and part-time jobs:
+
+```{r}
+salaries <- salaries %>% filter(!is.na(Status))
+salaries %>% 
+  ggplot(.,aes(x = TotalPay/1000,fill = Status))+
+  geom_histogram(bins = 100,color = "white",alpha = 0.5)+
+  labs(title = "Full time vs Part time jobs",
+       x = "Total Pay in thousands",
+       y = "Frequency")
+```
+### Density plot:
+```{r}
+salaries %>% 
+  ggplot(.,aes(x = TotalPay/1000,fill = Status))+
+  geom_density(alpha = 0.5)+
+  labs(title = "Full time vs Part time jobs",
+       x = "Total Pay in thousands",
+       y = "Density")
+```
+
+## Conclusion:
+- The average salary for full-time jobs is 107,000 and for part-time jobs is 31,000. This shows that full-time jobs have higher salaries compared to part-time jobs.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
